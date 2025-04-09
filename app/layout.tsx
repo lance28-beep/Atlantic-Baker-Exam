@@ -12,7 +12,6 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "Atlantic Bakery Exam System",
   description: "A comprehensive exam management system for Atlantic Bakery employees",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
