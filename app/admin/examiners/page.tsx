@@ -3,8 +3,9 @@ import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { Search, Eye } from "lucide-react"
 import DashboardLayout from "@/components/dashboard-layout"
+import Link from "next/link"
 
 export default async function ExaminersPage({ searchParams }: { searchParams: { search?: string } }) {
   // Get the user from the server
@@ -34,6 +35,26 @@ export default async function ExaminersPage({ searchParams }: { searchParams: { 
   }
 
   const { data: examiners } = await query
+
+  // Get exam attempts for each examiner
+  const examAttemptsByExaminer: Record<string, any[]> = {}
+  if (examiners && examiners.length > 0) {
+    const examinerIds = examiners.map((e) => e.id)
+    const { data: attempts } = await supabase
+      .from("exam_attempts")
+      .select("*")
+      .in("user_id", examinerIds)
+      .order("completed_at", { ascending: false })
+
+    if (attempts) {
+      attempts.forEach((attempt) => {
+        if (!examAttemptsByExaminer[attempt.user_id]) {
+          examAttemptsByExaminer[attempt.user_id] = []
+        }
+        examAttemptsByExaminer[attempt.user_id].push(attempt)
+      })
+    }
+  }
 
   return (
     <DashboardLayout>
@@ -72,28 +93,69 @@ export default async function ExaminersPage({ searchParams }: { searchParams: { 
                     <th className="text-left py-3 px-4">Designation</th>
                     <th className="text-left py-3 px-4">Store Area</th>
                     <th className="text-left py-3 px-4">Date Deployed</th>
+                    <th className="text-left py-3 px-4">Latest Exam</th>
+                    <th className="text-left py-3 px-4">Status</th>
                     <th className="text-left py-3 px-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {examiners && examiners.length > 0 ? (
-                    examiners.map((examiner) => (
-                      <tr key={examiner.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
-                        <td className="py-3 px-4">{examiner.full_name}</td>
-                        <td className="py-3 px-4">{examiner.age}</td>
-                        <td className="py-3 px-4">{examiner.designation}</td>
-                        <td className="py-3 px-4">{examiner.store_area}</td>
-                        <td className="py-3 px-4">{new Date(examiner.date_deployed).toLocaleDateString()}</td>
-                        <td className="py-3 px-4">
-                          <Button variant="outline" size="sm" asChild>
-                            <a href={`/admin/examiners/${examiner.id}`}>View Details</a>
-                          </Button>
-                        </td>
-                      </tr>
-                    ))
+                    examiners.map((examiner) => {
+                      const attempts = examAttemptsByExaminer[examiner.id] || []
+                      const latestAttempt = attempts[0]
+                      const hasPassed = latestAttempt?.completed_at
+                        ? latestAttempt.score / latestAttempt.total_questions >= 0.7
+                        : null
+
+                      return (
+                        <tr key={examiner.id} className="border-b hover:bg-gray-50 dark:hover:bg-gray-800">
+                          <td className="py-3 px-4">{examiner.full_name}</td>
+                          <td className="py-3 px-4">{examiner.age}</td>
+                          <td className="py-3 px-4">{examiner.designation}</td>
+                          <td className="py-3 px-4">{examiner.store_area}</td>
+                          <td className="py-3 px-4">{new Date(examiner.date_deployed).toLocaleDateString()}</td>
+                          <td className="py-3 px-4">
+                            {latestAttempt ? (
+                              <span>
+                                {latestAttempt.exam_type}
+                                <br />
+                                <span className="text-sm text-gray-500">
+                                  {new Date(latestAttempt.completed_at || latestAttempt.started_at).toLocaleDateString()}
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-gray-500">No attempts</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            {latestAttempt?.completed_at ? (
+                              <span
+                                className={`font-medium ${
+                                  hasPassed ? "text-green-600" : "text-red-600"
+                                }`}
+                              >
+                                {hasPassed ? "PASSED" : "FAILED"}
+                              </span>
+                            ) : latestAttempt ? (
+                              <span className="text-yellow-600">In Progress</span>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-4">
+                            <Link href={`/admin/examiners/${examiner.id}`}>
+                              <Button variant="outline" size="sm" className="flex items-center">
+                                <Eye className="h-4 w-4 mr-1" />
+                                View Details
+                              </Button>
+                            </Link>
+                          </td>
+                        </tr>
+                      )
+                    })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="py-4 text-center text-gray-500">
+                      <td colSpan={8} className="py-4 text-center text-gray-500">
                         No examiners found.
                       </td>
                     </tr>

@@ -3,9 +3,10 @@ import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import DashboardLayout from "@/components/dashboard-layout"
 import type { ExamType } from "@/types"
+import DeleteQuestionButton from "@/components/delete-question-button"
 
 export default async function QuestionsPage() {
   // Get the user from the server
@@ -94,11 +95,7 @@ export default async function QuestionsPage() {
                               Edit
                             </Button>
                           </Link>
-                          <Link href={`/admin/questions/delete/${question.id}`}>
-                            <Button variant="outline" size="sm" className="text-red-500 hover:text-red-700">
-                              Delete
-                            </Button>
-                          </Link>
+                          <DeleteQuestionButton questionId={question.id} />
                         </div>
                       </div>
                     ))}

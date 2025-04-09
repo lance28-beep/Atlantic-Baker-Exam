@@ -262,3 +262,163 @@ export async function createAdmin(prevState: any, formData: FormData) {
     return { error: "An unexpected error occurred. Please try again." }
   }
 }
+
+export async function updateExaminerProfile(prevState: any, formData: FormData) {
+  const cookieStore = cookies()
+  const supabase = createServerActionClient({ cookies: () => cookieStore })
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+
+    if (!session) {
+      return { error: "Not authenticated" }
+    }
+
+    const full_name = formData.get("full_name") as string
+    const age = parseInt(formData.get("age") as string)
+    const designation = formData.get("designation") as string
+    const store_area = formData.get("store_area") as string
+    const date_deployed = formData.get("date_deployed") as string
+
+    const { error } = await supabase
+      .from("examiners")
+      .update({
+        full_name,
+        age,
+        designation,
+        store_area,
+        date_deployed,
+      })
+      .eq("id", session.user.id)
+
+    if (error) {
+      return { error: error.message }
+    }
+
+    return { success: true }
+  } catch (error) {
+    console.error("Profile update error:", error)
+    return { error: "An unexpected error occurred. Please try again." }
+  }
+}
+
+// Exam Settings Actions
+export async function updateExamSettings(prevState: any, formData: FormData) {
+  const supabase = createServerActionClient({ cookies: () => cookies() })
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    return { error: "Not authenticated" }
+  }
+
+  // Check if user is admin
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("id", session.user.id)
+    .single()
+
+  if (!admin) {
+    return { error: "Not authorized" }
+  }
+
+  const defaultTime = formData.get("defaultTime") as string
+  const warningTime = formData.get("warningTime") as string
+  const autoSubmit = formData.get("autoSubmit") === "true"
+
+  const { error } = await supabase
+    .from("exam_settings")
+    .upsert({
+      id: 1, // Using a single row for global settings
+      default_time: parseInt(defaultTime),
+      warning_time: parseInt(warningTime),
+      auto_submit: autoSubmit,
+      updated_by: session.user.id
+    })
+
+  if (error) {
+    return { error: "Failed to update exam settings" }
+  }
+
+  return { success: "Exam settings updated successfully" }
+}
+
+// Examiner Approval Actions
+export async function approveExaminer(prevState: any, formData: FormData) {
+  const supabase = createServerActionClient({ cookies: () => cookies() })
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    return { error: "Not authenticated" }
+  }
+
+  // Check if user is admin
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("id", session.user.id)
+    .single()
+
+  if (!admin) {
+    return { error: "Not authorized" }
+  }
+
+  const examinerId = formData.get("examinerId") as string
+  const status = formData.get("status") as "approved" | "rejected"
+
+  const { error } = await supabase
+    .from("examiners")
+    .upsert({
+      id: examinerId,
+      status,
+      approved_by: session.user.id,
+      approved_at: new Date().toISOString()
+    })
+
+  if (error) {
+    return { error: "Failed to update examiner status" }
+  }
+
+  return { success: `Examiner ${status} successfully` }
+}
+
+// Enhanced Admin Management
+export async function updateAdminRole(prevState: any, formData: FormData) {
+  const supabase = createServerActionClient({ cookies: () => cookies() })
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    return { error: "Not authenticated" }
+  }
+
+  // Check if user is super admin
+  const { data: admin } = await supabase
+    .from("admins")
+    .select("*")
+    .eq("id", session.user.id)
+    .single()
+
+  if (!admin || admin.role !== "super_admin") {
+    return { error: "Not authorized" }
+  }
+
+  const adminId = formData.get("adminId") as string
+  const role = formData.get("role") as "admin" | "super_admin"
+
+  const { error } = await supabase
+    .from("admins")
+    .upsert({
+      id: adminId,
+      role,
+      updated_by: session.user.id,
+      updated_at: new Date().toISOString()
+    })
+
+  if (error) {
+    return { error: "Failed to update admin role" }
+  }
+
+  return { success: "Admin role updated successfully" }
+}

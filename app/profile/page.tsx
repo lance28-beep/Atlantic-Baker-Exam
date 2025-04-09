@@ -9,23 +9,11 @@ import { Label } from "@/components/ui/label"
 import { cookies } from "next/headers"
 import { createServerActionClient } from "@supabase/auth-helpers-nextjs"
 import Link from "next/link"
-
-// Loading component for Suspense
-function ProfileLoading() {
-  return (
-    <DashboardLayout>
-      <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="h-80 bg-gray-200 rounded"></div>
-            <div className="h-80 bg-gray-200 rounded"></div>
-          </div>
-        </div>
-      </div>
-    </DashboardLayout>
-  )
-}
+import { updateExaminerProfile } from "@/lib/actions"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useFormStatus } from "react-dom"
+import ProfileLoading from "./loading"
+import ProfileForm from "./profile-form"
 
 export default async function ProfilePage() {
   // Get the user from the server
@@ -172,42 +160,7 @@ export default async function ProfilePage() {
                 <CardTitle>Personal Information</CardTitle>
                 <CardDescription>Your account details</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input id="email" value={session.user.email} readOnly className="bg-gray-50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">Full Name</Label>
-                  <Input id="full_name" value={examiner.full_name} readOnly className="bg-gray-50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
-                  <Input id="age" value={examiner.age} readOnly className="bg-gray-50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="designation">Designation</Label>
-                  <Input id="designation" value={examiner.designation} readOnly className="bg-gray-50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="store_area">Branch/Store Area</Label>
-                  <Input id="store_area" value={examiner.store_area} readOnly className="bg-gray-50" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="date_deployed">Date Deployed</Label>
-                  <Input
-                    id="date_deployed"
-                    value={new Date(examiner.date_deployed).toLocaleDateString()}
-                    readOnly
-                    className="bg-gray-50"
-                  />
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  Edit Profile
-                </Button>
-              </CardFooter>
+              <ProfileForm examiner={examiner} email={session.user.email || ""} />
             </Card>
 
             <Card>
