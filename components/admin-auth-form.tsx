@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { createAdmin } from "@/lib/actions"
-import { Eye, EyeOff } from "lucide-react"
 
 type AdminFormState = {
   error?: string;
@@ -50,7 +49,7 @@ export default function AdminAuthForm() {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-2 top-1/2 -translate-y-1/2"
           >
-            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showPassword ? "Hide" : "Show"}
           </button>
         </div>
       </div>
