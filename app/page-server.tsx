@@ -1,11 +1,11 @@
 import AuthCheck from "./auth-check"
-import ClientHome from "./page-client"
+import ClientHome from "./page"
 
-export default async function Home() {
+export default async function HomePage() {
   return (
     <>
       <AuthCheck />
       <ClientHome />
     </>
   )
-}
+} 
